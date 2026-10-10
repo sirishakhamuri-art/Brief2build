@@ -1,0 +1,6 @@
+{
+  "name": "Brief2Build AI",
+  "description": "AI-powered business planning and business management web application from business idea to business growth.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
