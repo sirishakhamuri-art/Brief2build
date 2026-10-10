@@ -16,6 +16,7 @@ import { FoodSafetyModule } from './components/FoodSafetyModule';
 import { ReportsExport } from './components/ReportsExport';
 import { SettingsModal } from './components/SettingsModal';
 import { CashFlowForecastModule } from './components/CashFlowForecastModule';
+import { TeamProposalModule } from './components/TeamProposalModule';
 import {
   Sparkles,
   LayoutDashboard,
@@ -38,6 +39,7 @@ import {
   ChevronRight,
   CheckCircle2,
   Banknote,
+  Target,
 } from 'lucide-react';
 
 function MainApp() {
@@ -102,6 +104,7 @@ function MainApp() {
     { id: 'insights', label: 'AI Business Insights', icon: Sparkles },
     { id: 'safety', label: 'Food & Product Safety', icon: ShieldAlert, badge: isFoodCategory ? 'Active' : undefined },
     { id: 'reports', label: 'PDF Reports & Export', icon: FileText },
+    { id: 'proposal', label: 'Team Proposal & Roadmap', icon: Target, badge: 'Team' },
   ];
 
   return (
@@ -209,6 +212,20 @@ function MainApp() {
 
           {/* Right Header Badges & Actions */}
           <div className="flex items-center space-x-3">
+            {/* Team Alignment Proposal Shortcut */}
+            <button
+              onClick={() => setActiveSection('proposal')}
+              className={`hidden md:flex items-center space-x-1.5 px-3 py-1 rounded-lg border text-xs font-semibold transition cursor-pointer ${
+                activeSection === 'proposal'
+                  ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/20'
+                  : 'bg-indigo-600/20 hover:bg-indigo-600/30 border-indigo-500/30 text-indigo-300'
+              }`}
+              title="Team Alignment Proposal & Prototype Tour"
+            >
+              <Target className="w-3.5 h-3.5" />
+              <span>Team Proposal</span>
+            </button>
+
             {/* Currency Pill */}
             <div
               onClick={() => setSettingsOpen(true)}
@@ -326,6 +343,8 @@ function MainApp() {
             <FoodSafetyModule />
           ) : activeSection === 'reports' ? (
             <ReportsExport />
+          ) : activeSection === 'proposal' ? (
+            <TeamProposalModule onNavigate={(sec) => setActiveSection(sec)} />
           ) : (
             <DashboardOverview onNavigate={(sec) => setActiveSection(sec)} />
           )}

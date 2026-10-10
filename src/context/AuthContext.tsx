@@ -95,8 +95,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // fetch initial notifications
         const notifs = await api.get<NotificationItem[]>('/api/notifications').catch(() => []);
         setNotifications(notifs || []);
-      } catch (err) {
-        console.error('Auth verification failed:', err);
+      } catch {
+        // Stale or expired token from previous session: silently clear and show welcome view
         removeStoredToken();
         setUser(null);
         setBusiness(null);

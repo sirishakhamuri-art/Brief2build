@@ -754,3 +754,91 @@ export function exportCashFlowForecastPDF(forecast: CashFlowForecastReport, busi
   addFooter(doc);
   doc.save(`${businessName.replace(/\s+/g, '_')}_Cash_Flow_Forecast.pdf`);
 }
+
+export function exportTeamProposalPDF(businessName: string) {
+  const doc = new jsPDF();
+  addStandardHeader({
+    doc,
+    businessName,
+    reportTitle: 'Project Alignment Proposal & Technical Roadmap',
+    period: 'Current Sprint & Milestone Planning',
+  });
+
+  let currentY = 58;
+
+  // North Star
+  doc.setFillColor(241, 245, 249);
+  doc.roundedRect(14, currentY, 182, 22, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(30, 41, 59);
+  doc.text('North Star Vision:', 18, currentY + 7);
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    '"Eliminate the gap between business planning and business execution by replacing fragmented spreadsheets and guesswork with a single AI-guided operations platform."',
+    18,
+    currentY + 14,
+    { maxWidth: 174 }
+  );
+
+  currentY += 28;
+
+  // Scope Boundaries Table
+  autoTable(doc, {
+    startY: currentY,
+    head: [['In Scope (Core Deliverables)', 'Out of Scope (Strict Non-Goals)']],
+    body: [
+      ['Guided Business Plan Wizard (Idea -> Feasibility)', 'No website building, hosting, or editing'],
+      ['Verified Trade Supplier Discovery & Restock Quotes', 'No redirection to external website builders'],
+      ['Real-time POS Billing with Auto-Stock Deduction', 'No speculative ungrounded AI hallucinations'],
+      ['Managerial P&L (Gross Margin, COGS, Net Profit)', 'No mock-only static screens without DB persistence'],
+      ['90-Day Cash Flow Forecasting & Scenario Modeling', 'No generic chatbot windows without operational context'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [79, 70, 229], textColor: 255, fontSize: 8 },
+    bodyStyles: { fontSize: 7 },
+    margin: { left: 14, right: 14 },
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 8;
+
+  // Team Roles
+  autoTable(doc, {
+    startY: currentY,
+    head: [['Role & Lead', 'Domain Responsibility', 'Key Deliverables']],
+    body: [
+      ['Frontend & UX Lead', 'React 19, Tailwind v4, Mobile Nav, Dark UI', 'POS Checkout, Plan Wizard, PDF Export Suite'],
+      ['Backend & Data Lead', 'Express.js, Session Auth, Atomic Persistence', 'Safe stock deduction, multi-tenant DB, REST APIs'],
+      ['AI & Financial Modeler', 'Gemini SDK, Cash Flow Algorithms, P&L formulas', 'Break-even math, 90-day forecast, model fallbacks'],
+      ['QA & Product Analyst', 'Edge-case testing, Retail & Bakery workflows', 'Zero-stock checks, audit logs, verified supplier data'],
+    ],
+    theme: 'striped',
+    headStyles: { fillColor: [30, 41, 59], textColor: 255, fontSize: 8 },
+    bodyStyles: { fontSize: 7 },
+    margin: { left: 14, right: 14 },
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 8;
+
+  // Roadmaps & Milestones
+  autoTable(doc, {
+    startY: currentY,
+    head: [['Phase', 'Focus Area', 'Milestone Outcome']],
+    body: [
+      ['Phase 1', 'Ideation & Sourcing Engine', 'AI Feasibility Plan + Curated B2B Supplier Directory'],
+      ['Phase 2', 'Core Daily Operations', 'POS Sales Register + Auto-Inventory Deduction + P&L'],
+      ['Phase 3', 'Predictive Intelligence', '90-Day Cash Flow Forecast + Live AI Business Insights'],
+      ['Phase 4', 'Compliance & Export Suite', 'Food Safety Ledger + 8 Downloadable Executive PDFs'],
+    ],
+    theme: 'striped',
+    headStyles: { fillColor: [15, 23, 42], textColor: 255, fontSize: 8 },
+    bodyStyles: { fontSize: 7 },
+    margin: { left: 14, right: 14 },
+  });
+
+  addFooter(doc);
+  doc.save(`${businessName.replace(/\s+/g, '_')}_Team_Alignment_Proposal.pdf`);
+}
+

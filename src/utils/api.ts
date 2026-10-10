@@ -32,6 +32,9 @@ export async function apiRequest<T = any>(endpoint: string, options: RequestInit
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    if (response.status === 401) {
+      removeStoredToken();
+    }
     throw new Error(data.error || data.message || `Request failed with status ${response.status}`);
   }
 

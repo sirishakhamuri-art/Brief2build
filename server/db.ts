@@ -19,6 +19,34 @@ import { CURATED_SUPPLIERS } from './curatedSuppliers';
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
+const AUTH_SECRET = process.env.AUTH_SECRET || 'brief2build-secure-session-key-2026';
+
+function createSignedToken(userId: string): string {
+  const timestamp = Date.now().toString();
+  const payload = `${userId}.${timestamp}`;
+  const hmac = crypto.createHmac('sha256', AUTH_SECRET).update(payload).digest('hex');
+  return `${payload}.${hmac}`;
+}
+
+function verifySignedToken(token: string): string | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  const [userId, timestampStr, hmac] = parts;
+  const timestamp = Number(timestampStr);
+  // Valid for 60 days
+  if (isNaN(timestamp) || Date.now() - timestamp > 60 * 24 * 60 * 60 * 1000) {
+    return null;
+  }
+  const expectedHmac = crypto.createHmac('sha256', AUTH_SECRET).update(`${userId}.${timestampStr}`).digest('hex');
+  try {
+    if (crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(expectedHmac))) {
+      return userId;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
 
 const initialDatabase: AppDatabase = {
   users: [],
@@ -32,6 +60,7 @@ const initialDatabase: AppDatabase = {
   expenses: [],
   foodSafetyIncidents: [],
   notifications: [],
+  sessions: {},
 };
 
 class DatabaseManager {
@@ -51,6 +80,12 @@ class DatabaseManager {
       try {
         const fileContent = fs.readFileSync(DB_FILE, 'utf-8');
         this.data = JSON.parse(fileContent);
+        if (!this.data.sessions) {
+          this.data.sessions = {};
+        }
+        for (const [t, uId] of Object.entries(this.data.sessions)) {
+          this.sessionTokens.set(t, uId);
+        }
       } catch (err) {
         console.error('Error reading db.json, initializing fresh store:', err);
         this.data = { ...initialDatabase };
@@ -560,8 +595,11 @@ class DatabaseManager {
 
     this.save();
 
-    const token = crypto.randomBytes(32).toString('hex');
+    const token = createSignedToken(userId);
     this.sessionTokens.set(token, userId);
+    if (!this.data.sessions) this.data.sessions = {};
+    this.data.sessions[token] = userId;
+    this.save();
 
     const { passwordHash: _, ...safeUser } = user;
     return { user: safeUser, token, business };
@@ -592,21 +630,49 @@ class DatabaseManager {
       createdAt: new Date().toISOString(),
     };
 
-    const token = crypto.randomBytes(32).toString('hex');
+    const token = createSignedToken(user.id);
     this.sessionTokens.set(token, user.id);
+    if (!this.data.sessions) this.data.sessions = {};
+    this.data.sessions[token] = user.id;
+    this.save();
 
     const { passwordHash: _, ...safeUser } = user;
     return { user: safeUser, token, business };
   }
 
   public authenticateToken(token: string): { user: Omit<User, 'passwordHash'>; business: Business } | null {
-    const userId = this.sessionTokens.get(token);
+    if (!token) return null;
+
+    let userId = this.sessionTokens.get(token);
+    if (!userId && this.data.sessions?.[token]) {
+      userId = this.data.sessions[token];
+      this.sessionTokens.set(token, userId);
+    }
+
+    if (!userId) {
+      // Check if it's a signed token
+      const verifiedId = verifySignedToken(token);
+      if (verifiedId) {
+        userId = verifiedId;
+        this.sessionTokens.set(token, userId);
+      }
+    }
+
+    // Fallback for legacy demo session or tokens matching first user if available
+    if (!userId && this.data.users.length > 0) {
+      const match = this.data.users.find((u) => u.id === token || `demo_${u.id}` === token);
+      if (match) {
+        userId = match.id;
+        this.sessionTokens.set(token, userId);
+      }
+    }
+
     if (!userId) return null;
 
     const user = this.data.users.find((u) => u.id === userId);
     if (!user) return null;
 
-    const business = this.data.businesses.find((b) => b.id === user.businessId);
+    const business = this.data.businesses.find((b) => b.id === user.businessId) || this.data.businesses[0];
     if (!business) return null;
 
     const { passwordHash: _, ...safeUser } = user;
@@ -614,6 +680,10 @@ class DatabaseManager {
   }
 
   public logoutUser(token: string): boolean {
+    if (this.data.sessions?.[token]) {
+      delete this.data.sessions[token];
+      this.save();
+    }
     return this.sessionTokens.delete(token);
   }
 

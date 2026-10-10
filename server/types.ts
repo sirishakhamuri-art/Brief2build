@@ -250,4 +250,5 @@ export interface AppDatabase {
   expenses: Expense[];
   foodSafetyIncidents: FoodSafetyIncident[];
   notifications: NotificationItem[];
+  sessions?: Record<string, string>;
 }
